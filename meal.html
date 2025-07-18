@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meal Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white font-sans">
+  <header class="bg-orange-500 py-4">
+    <div class="container mx-auto px-4 text-white text-xl font-bold flex items-center gap-2">
+       MEAL FINDER
+    </div>
+  </header>
+  <main class="container mx-auto px-4 py-8">
+    <a href="index.html" class="text-orange-500 hover:underline mb-4 inline-block">← Back to Home</a>
+    <div id="meal-container" class="bg-white rounded-lg shadow-lg p-6"></div>
+  </main>
+  <script>
+    const API = {
+      mealDetails: 'https://www.themealdb.com/api/json/v1/1/lookup.php?i='
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mealId = urlParams.get('id');
+
+    function renderMeal(meal) {
+      let ingredients = '';
+      let measures = '';
+
+      for (let i = 1; i <= 20; i++) {
+        const ing = meal["strIngredient" + i];
+        const meas = meal["strMeasure" + i];
+        if (ing && ing.trim()) {
+          ingredients += `<li class="mb-1">🍽️ ${ing}</li>`;
+          measures += `<li class="mb-1">📏 ${meas}</li>`;
+        }
+      }
+
+      const steps = meal.strInstructions
+        .split(/\r?\n/)
+        .filter(line => line.trim())
+        .map(line => `<li class="mb-2 flex items-start gap-2">✅ <span>${line}</span></li>`)
+        .join('');
+
+      return `
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">${meal.strMeal}</h1>
+        <img src="${meal.strMealThumb}" alt="${meal.strMeal}" class="rounded w-full max-w-xl mb-6 mx-auto" />
+        <div class="mb-4 text-gray-700">
+          <p><strong>Category:</strong> ${meal.strCategory}</p>
+          <p><strong>Area:</strong> ${meal.strArea}</p>
+          <p><strong>Tags:</strong> ${meal.strTags ? meal.strTags.split(',').map(tag => `<span class="inline-block bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded mr-1">${tag}</span>`).join(' ') : 'None'}</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <h2 class="text-xl font-semibold mb-2">Ingredients</h2>
+            <ul class="list-disc ml-5">${ingredients}</ul>
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold mb-2">Measures</h2>
+            <ul class="list-disc ml-5">${measures}</ul>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold mb-4 mt-10">Instructions</h2>
+        <ul class="text-gray-700 leading-relaxed list-disc pl-5">${steps}</ul>
+      `;
+    }
+
+    if (mealId) {
+      fetch(API.mealDetails + mealId)
+        .then(res => res.json())
+        .then(data => {
+          const meal = data?.meals?.[0];
+          document.getElementById('meal-container').innerHTML = meal
+            ? renderMeal(meal)
+            : `<p class="text-red-500">Meal not found.</p>`;
+        })
+        .catch(() => {
+          document.getElementById('meal-container').innerHTML = `<p class="text-red-500">Failed to load meal details.</p>`;
+        });
+    } else {
+      document.getElementById('meal-container').innerHTML = `<p class="text-gray-600">No meal ID provided in the URL.</p>`;
+    }
+  </script>
+</body>
+</html>
